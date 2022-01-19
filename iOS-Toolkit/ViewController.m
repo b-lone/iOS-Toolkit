@@ -10,7 +10,6 @@
 @interface ViewController ()<UICollectionViewDelegate, UICollectionViewDataSource>
 
 @property(nonatomic, readwrite, strong) UICollectionView *collectionView;
-@property(nonatomic, readwrite, strong) UICollectionView *subCollectionView;
 
 @end
 
@@ -18,23 +17,30 @@
 
 - (UICollectionViewLayout*)createLayouat {
     UICollectionViewCompositionalLayout *layout = [[UICollectionViewCompositionalLayout alloc] initWithSectionProvider:^NSCollectionLayoutSection * _Nullable(NSInteger section, id<NSCollectionLayoutEnvironment> _Nonnull environment) {
+        NSLog(@"effectiveContentSize: %@", NSStringFromCGSize(environment.container.effectiveContentSize));
+        NSLog(@"contentSize: %@", NSStringFromCGSize(environment.container.contentSize));
+        CGSize containerSize = environment.container.effectiveContentSize;
         CGFloat headerHeight = 40.0f;
         if (section == 0) {
-            NSCollectionLayoutSize* itemSize = [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0f] heightDimension:[NSCollectionLayoutDimension fractionalHeightDimension:1.0f]];
-            NSCollectionLayoutItem* item = [NSCollectionLayoutItem itemWithLayoutSize:itemSize];
+            CGFloat itemWidth = 50.0f;
+            CGFloat itemHeight = 50.0f;
             
-            NSCollectionLayoutSize *groupSize = [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0f] heightDimension:[NSCollectionLayoutDimension absoluteDimension:120.0f]];
-            NSCollectionLayoutGroup *group = [NSCollectionLayoutGroup horizontalGroupWithLayoutSize:groupSize subitem:item count:1];
+            NSCollectionLayoutSize* itemSize = [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension absoluteDimension:itemWidth] heightDimension:[NSCollectionLayoutDimension absoluteDimension:itemHeight]];
+            NSCollectionLayoutItem* item = [NSCollectionLayoutItem itemWithLayoutSize:itemSize];
+            [item setContentInsets:NSDirectionalEdgeInsetsMake(0, 0, 0, 0)];
+            
+            NSCollectionLayoutSize *groupSize = [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension absoluteDimension:itemWidth] heightDimension:[NSCollectionLayoutDimension absoluteDimension:itemHeight]];
+            NSCollectionLayoutGroup *group = [NSCollectionLayoutGroup horizontalGroupWithLayoutSize:groupSize subitems:@[item]];
             
             NSCollectionLayoutSection* layoutSection = [NSCollectionLayoutSection sectionWithGroup:group];
             
             NSCollectionLayoutSize *headerSize = [NSCollectionLayoutSize sizeWithWidthDimension:[NSCollectionLayoutDimension fractionalWidthDimension:1.0f] heightDimension:[NSCollectionLayoutDimension  absoluteDimension:headerHeight]];
             NSCollectionLayoutBoundarySupplementaryItem *sectionHeader = [NSCollectionLayoutBoundarySupplementaryItem boundarySupplementaryItemWithLayoutSize:headerSize elementKind:UICollectionElementKindSectionHeader alignment:NSRectAlignmentTop];
             layoutSection.boundarySupplementaryItems = @[sectionHeader];
+            layoutSection.orthogonalScrollingBehavior = UICollectionLayoutSectionOrthogonalScrollingBehaviorContinuous;
             
             return layoutSection;
         } else {
-            CGSize containerSize = environment.container.effectiveContentSize;
             CGFloat itemWidth = 120.0f;
             CGFloat itemHeight = 120.0f;
             CGFloat minimumInteritemSpacing = 2.0f;
@@ -78,20 +84,6 @@
     [[self.collectionView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor]  setActive:YES];
     [[self.collectionView.topAnchor constraintEqualToAnchor:self.view.topAnchor]  setActive:YES];
     [[self.collectionView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]  setActive:YES];
-    
-    
-    UICollectionViewFlowLayout* layout2 = [UICollectionViewFlowLayout new];
-    layout2.itemSize = CGSizeMake(130, 130);
-    layout2.scrollDirection = UICollectionViewScrollDirectionHorizontal;
-    layout2.minimumLineSpacing = 0;
-    layout2.minimumInteritemSpacing = 0;
-    
-    self.subCollectionView = [[UICollectionView alloc] initWithFrame:CGRectMake(0, 0, 0, 0) collectionViewLayout:layout2];
-    self.subCollectionView.delegate = self;
-    self.subCollectionView.dataSource = self;
-    [self.subCollectionView registerClass:UICollectionViewCell.class forCellWithReuseIdentifier:@"123"];
-    self.subCollectionView.showsHorizontalScrollIndicator = NO;
-    self.subCollectionView.translatesAutoresizingMaskIntoConstraints = NO;
 }
 
 - (nonnull __kindof UICollectionViewCell *)collectionView:(nonnull UICollectionView *)collectionView cellForItemAtIndexPath:(nonnull NSIndexPath *)indexPath {
@@ -102,11 +94,7 @@
     
     if (collectionView == self.collectionView) {
         if (indexPath.section == 0) {
-            [cell.contentView addSubview:self.subCollectionView];
-            [[self.subCollectionView.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor]  setActive:YES];
-            [[self.subCollectionView.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor]  setActive:YES];
-            [[self.subCollectionView.topAnchor constraintEqualToAnchor:cell.contentView.topAnchor]  setActive:YES];
-            [[self.subCollectionView.bottomAnchor constraintEqualToAnchor:cell.contentView.bottomAnchor]  setActive:YES];
+            cell.backgroundColor = [[UIColor alloc] initWithRed:(random()%256)/256.0f green:(random()%256)/256.0f blue:(random()%256)/256.0f alpha:1.0f];
         } else {
             cell.backgroundColor = [[UIColor alloc] initWithRed:(random()%256)/256.0f green:(random()%256)/256.0f blue:(random()%256)/256.0f alpha:1.0f];
         }
@@ -117,41 +105,20 @@
 }
 
 - (NSInteger)collectionView:(nonnull UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    if (collectionView == self.collectionView) {
-        if (section == 0) {
-            return 1;
-        } else  {
-            return 100;
-        }
-    } else {
-        return 10;
+    if (section == 0) {
+        return 20;
+    } else  {
+        return 100;
     }
 }
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
-    if (collectionView == self.collectionView) {
-        return 2;
-    } else {
-        return 1;
-    }
+    return 2;
 }
 
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath {
-    if (collectionView == self.subCollectionView) {
-        return NULL;
-    }
-    
     UICollectionReusableView* view = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"456" forIndexPath:indexPath];
     view.backgroundColor = [[UIColor alloc] initWithRed:(random()%256)/256.0f green:(random()%256)/256.0f blue:(random()%256)/256.0f alpha:1.0f];
-    [[view.heightAnchor constraintEqualToConstant:100] setActive:YES];
-    [[view.widthAnchor constraintEqualToConstant:100] setActive:YES];
-    
-//    UITextField* label = [UITextField new];
-//    label.text = kind;
-//    label.backgroundColor = [UIColor blueColor];
-//
-//    [view addSubview:label];
-//    [label.centerXAnchor constraintEqualToAnchor:view.centerXAnchor];
     
     return view;
 }
